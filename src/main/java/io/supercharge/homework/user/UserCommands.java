@@ -7,6 +7,8 @@ import java.util.Optional;
 import org.springframework.shell.standard.ShellComponent;
 import org.springframework.shell.standard.ShellMethod;
 
+import io.supercharge.homework.exception.EmptyResultException;
+
 @ShellComponent
 public class UserCommands {
 	private final UserService userService;
@@ -15,7 +17,7 @@ public class UserCommands {
 		this.userService = userService;
 	}
 
-	@ShellMethod("Create and store the details of a user")
+	@ShellMethod("Create and store the details of a user (first name, last name and birth date)")
 	public String createUser(String firstName, String lastName, LocalDate dateOfBirth) {
 		User user = setUserDetails(firstName, lastName, dateOfBirth);
 		Optional<User> result = userService.create(user);
@@ -24,7 +26,11 @@ public class UserCommands {
 
 	@ShellMethod("Get all users")
 	public List<User> getUsers() {
-		return userService.getUsers();
+		List<User> users = userService.getUsers();
+		if(users.isEmpty()) {
+			throw new EmptyResultException("There is no user yet.");
+		}
+		return users;
 
 	}
 

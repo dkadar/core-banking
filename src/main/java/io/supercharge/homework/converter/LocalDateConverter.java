@@ -1,4 +1,4 @@
-package io.supercharge.homework;
+package io.supercharge.homework.converter;
 
 import java.time.LocalDate;
 
@@ -7,8 +7,8 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class LocalDateConverter implements Converter<String, LocalDate> {
-    @Override
-    public LocalDate convert(String date) {
-        return LocalDate.parse(date);
-    }
+	@Override
+	public LocalDate convert(String date) {
+		return LocalDate.parse(date);
+	}
 }

@@ -6,10 +6,10 @@ import org.springframework.util.Assert;
 import io.supercharge.homework.account.BankAccountService;
 
 @Component
-class TransactionalValidator {
+class TransactionValidator {
 	private final BankAccountService bankAccountService;
 	
-	public TransactionalValidator(BankAccountService bankAccountService) {
+	public TransactionValidator(BankAccountService bankAccountService) {
 		this.bankAccountService = bankAccountService;
 	}
 

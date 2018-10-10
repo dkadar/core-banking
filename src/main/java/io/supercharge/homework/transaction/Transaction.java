@@ -1,6 +1,6 @@
 package io.supercharge.homework.transaction;
 
-import java.time.LocalDate;
+import java.time.LocalDateTime;
 
 import javax.persistence.Entity;
 import javax.persistence.EnumType;
@@ -21,11 +21,8 @@ public class Transaction {
 	private long id;
 	@ManyToOne
 	@JoinColumn(name = "SOURCE_BANK_ACCOUNT_ID")
-	private BankAccount source;
-	@ManyToOne
-	@JoinColumn(name = "TARGET_BANK_ACCOUNT_ID")
-	private BankAccount target;
-	private LocalDate date;
+	private BankAccount account;
+	private LocalDateTime date;
 	private long amount;
 	@Enumerated(EnumType.STRING)
 	private TransactionType type;

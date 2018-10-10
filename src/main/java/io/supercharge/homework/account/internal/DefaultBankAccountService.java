@@ -2,16 +2,14 @@ package io.supercharge.homework.account.internal;
 
 import java.util.Optional;
 
-import javax.transaction.Transactional;
-
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import io.supercharge.homework.account.BankAccount;
-import io.supercharge.homework.account.BankAccountHistory;
-import io.supercharge.homework.account.BankAccountHistoryRepository;
+import io.supercharge.homework.account.BankAccountHistoryService;
 import io.supercharge.homework.account.BankAccountRepository;
 import io.supercharge.homework.account.BankAccountService;
-import io.supercharge.homework.transaction.TransactionType;
+import io.supercharge.homework.transaction.Transaction;
 import io.supercharge.homework.user.User;
 import io.supercharge.homework.user.UserService;
 
@@ -19,13 +17,13 @@ import io.supercharge.homework.user.UserService;
 @Transactional
 public class DefaultBankAccountService implements BankAccountService {
 	private final BankAccountRepository repository;
-	private final BankAccountHistoryRepository historyRepiository;
+	private final BankAccountHistoryService historyService;
 	private final UserService userService;
 
-	public DefaultBankAccountService(BankAccountRepository repository, BankAccountHistoryRepository historyRepiository,
+	public DefaultBankAccountService(BankAccountRepository repository, BankAccountHistoryService historyService,
 			UserService userService) {
 		this.repository = repository;
-		this.historyRepiository = historyRepiository;
+		this.historyService = historyService;
 		this.userService = userService;
 	}
 
@@ -37,7 +35,7 @@ public class DefaultBankAccountService implements BankAccountService {
 			BankAccount account = new BankAccount();
 			account.setBalance(0);
 			account.setOwner(owner.get());
-			result = Optional.ofNullable(repository.save(account));
+			result = Optional.of(repository.save(account));
 		}
 		return result;
 	}
@@ -55,48 +53,37 @@ public class DefaultBankAccountService implements BankAccountService {
 	@Override
 	public boolean hasEnoughMoney(long accountId, long amount) {
 		Optional<BankAccount> currentAccount = repository.findById(accountId);
-		return currentAccount.isPresent() ? currentAccount.get().getBalance() >= amount : false;
+		return currentAccount.isPresent() && currentAccount.get().getBalance() >= amount;
 	}
 
 	@Override
-	public void deposite(long accountId, long amount) {
-		Optional<BankAccount> account = repository.findById(accountId);
+	public void deposite(Transaction transaction) {
+		Optional<BankAccount> account = repository.findById(transaction.getAccount().getId());
 		if (account.isPresent()) {
 			BankAccount currentAccount = account.get();
-			currentAccount.setBalance(currentAccount.getBalance() + amount);
+			currentAccount.setBalance(currentAccount.getBalance() + transaction.getAmount());
 			repository.save(currentAccount);
-			logTransfer(currentAccount, TransactionType.DEPOSIT, amount);
-
+			historyService.storeTransactionalData(currentAccount, transaction);
 		}
 
 	}
 
 	@Override
-	public void withdrawal(long accountId, long amount) {
-		Optional<BankAccount> account = repository.findById(accountId);
+	public void withdrawal(Transaction transaction) {
+		Optional<BankAccount> account = repository.findById(transaction.getAccount().getId());
 		if (account.isPresent()) {
 			BankAccount currentAccount = account.get();
-			currentAccount.setBalance(currentAccount.getBalance() - amount);
+			currentAccount.setBalance(currentAccount.getBalance() - transaction.getAmount());
 			repository.save(currentAccount);
-			logTransfer(currentAccount, TransactionType.WITHDRAWAL, amount);
+			historyService.storeTransactionalData(currentAccount, transaction);
 		}
 
 	}
 
 	@Override
-	public void transfer(long sourceAccountId, long targetAccountId, long amount) {
-		withdrawal(sourceAccountId, amount);
-		deposite(targetAccountId, amount);
-
-	}
-
-	private void logTransfer(BankAccount currentAccount, TransactionType type, long amount) {
-		BankAccountHistory history = new BankAccountHistory();
-		history.setAccount(currentAccount);
-		history.setCurrentBalance(currentAccount.getBalance());
-		history.setTransaction(type);
-		history.setAmount(amount);
-		historyRepiository.save(history);
+	public void transfer(Transaction withdrawalTransaction, Transaction depositeTransaction) {
+		withdrawal(withdrawalTransaction);
+		deposite(depositeTransaction);
 
 	}
 
